@@ -1,4 +1,4 @@
-import { API_BASE } from "../config/apiBase";
+import { API_BASE } from "./config/apiBase.js";
 
 export async function apiGet(path, token) {
   const res = await fetch(`${API_BASE}${path}`, {
