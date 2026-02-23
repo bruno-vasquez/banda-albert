@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:9090";
+import { apiGet } from "../api";
 
 function toLowerSafe(v) {
   return (v ?? "").toString().toLowerCase();
@@ -13,16 +12,12 @@ function sortRows(rows, field, dir) {
     const vaRaw = a?.[field];
     const vbRaw = b?.[field];
 
-    // boolean
     if (typeof vaRaw === "boolean" || typeof vbRaw === "boolean") {
-      const ba = vaRaw ? 1 : 0;
-      const bb = vbRaw ? 1 : 0;
-      return (ba - bb) * mult;
+      return ((vaRaw ? 1 : 0) - (vbRaw ? 1 : 0)) * mult;
     }
 
     const va = toLowerSafe(vaRaw);
     const vb = toLowerSafe(vbRaw);
-
     if (va < vb) return -1 * mult;
     if (va > vb) return 1 * mult;
     return 0;
@@ -36,7 +31,7 @@ export default function AsistenciaPorFecha() {
   const [q, setQ] = useState("");
   const [familiaId, setFamiliaId] = useState("");
   const [instrumentoId, setInstrumentoId] = useState("");
-  const [asistio, setAsistio] = useState(""); // "", "true", "false"
+  const [asistio, setAsistio] = useState("");
 
   const [familias, setFamilias] = useState([]);
   const [instrumentos, setInstrumentos] = useState([]);
@@ -50,71 +45,68 @@ export default function AsistenciaPorFecha() {
   const [sortField, setSortField] = useState("apellido");
   const [sortDir, setSortDir] = useState("asc");
 
-  async function fetchFamilias() {
+  const [error, setError] = useState("");
+
+  async function loadFamilias() {
     try {
-      const r = await fetch(`${API}/api/familias`);
-      if (!r.ok) return;
-      const json = await r.json();
-      setFamilias(Array.isArray(json) ? json : (json.content || []));
+      const data = await apiGet(`/api/familias`);
+      setFamilias(Array.isArray(data) ? data : (data?.content || []));
     } catch (e) {
-      console.error("Error familias:", e);
+      console.error(e);
     }
   }
 
-  async function fetchInstrumentos() {
+  async function loadInstrumentos() {
     try {
-      const r = await fetch(`${API}/api/instrumentos`);
-      if (!r.ok) return;
-      const json = await r.json();
-      setInstrumentos(Array.isArray(json) ? json : (json.content || []));
+      const data = await apiGet(`/api/instrumentos`);
+      setInstrumentos(Array.isArray(data) ? data : (data?.content || []));
     } catch (e) {
-      console.error("Error instrumentos:", e);
+      console.error(e);
     }
   }
 
-  async function fetchAsistencia() {
+  async function loadAsistencia() {
     setLoading(true);
+    setError("");
     try {
       const params = new URLSearchParams();
       params.set("fecha", fecha);
-      params.set("page", page.toString());
-      params.set("size", size.toString());
+      params.set("page", String(page));
+      params.set("size", String(size));
 
       if (q.trim()) params.set("q", q.trim());
       if (familiaId) params.set("familiaId", familiaId);
       if (instrumentoId) params.set("instrumentoId", instrumentoId);
       if (asistio !== "") params.set("asistio", asistio);
 
-      const r = await fetch(`${API}/api/asistencias/por-fecha?${params.toString()}`);
-      if (!r.ok) throw new Error("Error cargando asistencias");
-
-      const json = await r.json();
-      const data = Array.isArray(json) ? json : (json.content || []);
-      setRows(data);
+      const data = await apiGet(`/api/asistencias/por-fecha?${params.toString()}`);
+      const list = Array.isArray(data) ? data : (data?.content || []);
+      setRows(list);
     } catch (e) {
-      console.error("Error asistencia:", e);
+      console.error(e);
       setRows([]);
+      setError(e.message || "Error cargando");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    fetchFamilias();
-    fetchInstrumentos();
+    loadFamilias();
+    loadInstrumentos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    fetchAsistencia();
+    loadAsistencia();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fecha, page, size]);
 
   const rowsSorted = useMemo(() => sortRows(rows, sortField, sortDir), [rows, sortField, sortDir]);
 
   function toggleSort(field) {
-    if (sortField === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
+    if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
       setSortField(field);
       setSortDir("asc");
     }
@@ -122,30 +114,23 @@ export default function AsistenciaPorFecha() {
 
   function aplicarFiltros() {
     setPage(0);
-    fetchAsistencia();
+    loadAsistencia();
   }
 
-  function limpiarFiltros() {
+  function limpiar() {
     setQ("");
     setFamiliaId("");
     setInstrumentoId("");
     setAsistio("");
     setPage(0);
-    setTimeout(fetchAsistencia, 0);
+    setTimeout(loadAsistencia, 0);
   }
 
   return (
     <div style={{ padding: 16 }}>
-      <h2 style={{ marginBottom: 12 }}>Asistencia por fecha</h2>
+      <h1 style={{ marginBottom: 12 }}>Asistencia por fecha</h1>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(6, 1fr)",
-          gap: 10,
-          marginBottom: 12,
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 10, marginBottom: 12 }}>
         <div>
           <label>Fecha</label>
           <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} style={{ width: "100%" }} />
@@ -188,7 +173,7 @@ export default function AsistenciaPorFecha() {
             <option value="">Todos</option>
             {instrumentos.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.nombre}
+                {i.codigo ?? i.id}
               </option>
             ))}
           </select>
@@ -199,10 +184,7 @@ export default function AsistenciaPorFecha() {
         <button onClick={aplicarFiltros} disabled={loading}>
           {loading ? "Cargando..." : "Aplicar filtros"}
         </button>
-
-        <button onClick={limpiarFiltros} disabled={loading}>
-          Limpiar
-        </button>
+        <button onClick={limpiar} disabled={loading}>Limpiar</button>
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
           <label>Tamaño:</label>
@@ -224,31 +206,25 @@ export default function AsistenciaPorFecha() {
         </div>
       </div>
 
+      {error && (
+        <div style={{ padding: 10, border: "1px solid #f99", background: "#fff2f2", marginBottom: 12 }}>
+          <b>Error:</b> {error}
+        </div>
+      )}
+
       <div style={{ border: "1px solid #ddd", borderRadius: 10, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#f5f5f5" }}>
-              <th
-                style={{ padding: 10, cursor: "pointer", textAlign: "left" }}
-                onClick={() => toggleSort("apellido")}
-              >
+              <th style={{ padding: 10, cursor: "pointer", textAlign: "left" }} onClick={() => toggleSort("apellido")}>
                 Alumno {sortField === "apellido" ? (sortDir === "asc" ? "▲" : "▼") : ""}
               </th>
-
-              <th
-                style={{ padding: 10, cursor: "pointer", textAlign: "left" }}
-                onClick={() => toggleSort("instrumentoNombre")}
-              >
+              <th style={{ padding: 10, cursor: "pointer", textAlign: "left" }} onClick={() => toggleSort("instrumentoNombre")}>
                 Instrumento {sortField === "instrumentoNombre" ? (sortDir === "asc" ? "▲" : "▼") : ""}
               </th>
-
-              <th
-                style={{ padding: 10, cursor: "pointer", textAlign: "left" }}
-                onClick={() => toggleSort("familiaNombre")}
-              >
+              <th style={{ padding: 10, cursor: "pointer", textAlign: "left" }} onClick={() => toggleSort("familiaNombre")}>
                 Familia {sortField === "familiaNombre" ? (sortDir === "asc" ? "▲" : "▼") : ""}
               </th>
-
               <th style={{ padding: 10, cursor: "pointer", textAlign: "left" }} onClick={() => toggleSort("asistio")}>
                 Asistió {sortField === "asistio" ? (sortDir === "asc" ? "▲" : "▼") : ""}
               </th>

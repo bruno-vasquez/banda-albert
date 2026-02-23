@@ -45,3 +45,39 @@ export function clearToken() {
   setToken(null);
   setMe(null);
 }
+
+export async function apiRequest(path, options = {}) {
+  const token = getToken();
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+  });
+
+  // Intenta parsear JSON, si no, devuelve texto
+  const text = await res.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  if (!res.ok) {
+    const msg = typeof data === "string" ? data : (data?.message || res.statusText);
+    throw new Error(`${res.status} ${msg}`);
+  }
+
+  return data;
+}
+
+export function apiGet(path) {
+  return apiRequest(path, { method: "GET" });
+}
