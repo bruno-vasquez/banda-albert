@@ -1,40 +1,34 @@
-const base = import.meta.env.VITE_API_URL;
+import { API_BASE } from "../config/apiBase";
 
-export function getToken() {
-  return localStorage.getItem("token");
-}
+export async function apiGet(path, token) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
 
-export function setToken(t) {
-  localStorage.setItem("token", t);
-}
-
-export function clearToken() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("me");
-}
-
-export function getMe() {
-  const raw = localStorage.getItem("me");
-  return raw ? JSON.parse(raw) : null;
-}
-
-export function setMe(me) {
-  localStorage.setItem("me", JSON.stringify(me));
-}
-
-export async function api(path, opts = {}) {
-  const token = getToken();
-  const headers = {
-    ...(opts.headers || {}),
-    "Content-Type": "application/json",
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(`${base}${path}`, { ...opts, headers });
   if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(txt || `Error ${res.status}`);
+    const msg = await res.text().catch(() => "");
+    throw new Error(msg || `Error ${res.status}`);
   }
-  const ct = res.headers.get("content-type") || "";
-  return ct.includes("application/json") ? res.json() : res.text();
+  return res.json();
 }
+
+export async function apiPost(path, body, token) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => "");
+    throw new Error(msg || `Error ${res.status}`);
+  }
+  return res.json();
+}
+
+// Ejemplos:
+export const login = (cred) => apiPost("/api/auth/login", cred);
+export const listarAlumnos = (token) => apiGet("/api/alumnos", token);
