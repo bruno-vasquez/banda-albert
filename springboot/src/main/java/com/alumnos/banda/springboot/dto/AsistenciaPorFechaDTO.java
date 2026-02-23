@@ -12,7 +12,7 @@ public class AsistenciaPorFechaDTO {
     private String apellido;
 
     private Integer instrumentoId;
-    private String instrumentoNombre;
+    private String instrumentoNombre; // aquí llegará i.codigo
 
     private Integer familiaId;
     private String familiaNombre;

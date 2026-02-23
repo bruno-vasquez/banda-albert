@@ -17,7 +17,7 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
         "SELECT new com.alumnos.banda.springboot.dto.AsistenciaPorFechaDTO(" +
         " a.id, a.fecha, " +
         " al.id, al.nombre, al.apellido, " +
-        " i.id, i.nombre, " +
+        " i.id, i.codigo, " +
         " f.id, f.nombre, " +
         " a.asistio ) " +   // ✅ aquí
         "FROM Asistencia a " +
@@ -28,7 +28,7 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
         "AND (:q IS NULL OR :q = '' OR " +
         " LOWER(al.nombre) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
         " LOWER(al.apellido) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
-        " LOWER(i.nombre) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+        " LOWER(i.codigo) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
         " LOWER(f.nombre) LIKE LOWER(CONCAT('%', :q, '%')) ) " +
         "AND (:familiaId IS NULL OR f.id = :familiaId) " +
         "AND (:instrumentoId IS NULL OR i.id = :instrumentoId) " +
