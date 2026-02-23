@@ -5,6 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import AdminAlumnos from "./pages/AdminAlumnos";
 import AdminInstrumentos from "./pages/AdminInstrumentos";
 import Asistencia from "./pages/Asistencia";
+import AsistenciaPorFecha from "./pages/AsistenciaPorFecha"; // ✅ NUEVO
+
 
 function Layout({ children }) {
   const me = getMe();
@@ -19,14 +21,19 @@ function Layout({ children }) {
     <div style={{ fontFamily: "Arial", padding: 16 }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
         <h2 style={{ margin: 0 }}>Banda System</h2>
+
         <Link to="/dashboard">Dashboard</Link>
+
         {me?.role === "ROLE_ADMIN" && (
           <>
             <Link to="/admin/alumnos">Alumnos</Link>
             <Link to="/admin/instrumentos">Instrumentos</Link>
           </>
         )}
+
         <Link to="/asistencia">Asistencia</Link>
+        <Link to="/asistencia-por-fecha">Asistencia por fecha</Link> {/* ✅ NUEVO */}
+
         <div style={{ marginLeft: "auto" }}>
           {me ? (
             <>
@@ -100,6 +107,18 @@ export default function App() {
           <PrivateRoute>
             <Layout>
               <Asistencia />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+
+      {/* ✅ NUEVA VISTA */}
+      <Route
+        path="/asistencia-por-fecha"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <AsistenciaPorFecha />
             </Layout>
           </PrivateRoute>
         }
