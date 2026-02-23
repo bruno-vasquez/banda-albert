@@ -73,9 +73,9 @@ public class SecurityConfig {
         // En PROD lo correcto es poner aquí tu dominio del front.
         // Para no trabarte: permite local + Railway (y ajustas luego).
         configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "https://*.railway.app"
-        ));
+    "http://localhost:*",
+    "https://*.onrender.com"
+));
 
         configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
