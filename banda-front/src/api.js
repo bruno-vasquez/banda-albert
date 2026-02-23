@@ -1,6 +1,5 @@
 import { API_BASE } from "./config/apiBase.js";
 
-// Función genérica: api("/ruta", { method, body, headers... })
 export async function api(path, options = {}) {
   const token = localStorage.getItem("token");
 
@@ -18,7 +17,6 @@ export async function api(path, options = {}) {
     throw new Error(msg || `Error ${res.status}`);
   }
 
-  // por si el backend devuelve vacío alguna vez
   const text = await res.text().catch(() => "");
   return text ? JSON.parse(text) : {};
 }
@@ -28,16 +26,22 @@ export function setToken(token) {
   else localStorage.removeItem("token");
 }
 
+export function getToken() {
+  return localStorage.getItem("token");
+}
+
 export function setMe(me) {
   if (me) localStorage.setItem("me", JSON.stringify(me));
   else localStorage.removeItem("me");
 }
 
-export function getToken() {
-  return localStorage.getItem("token");
-}
-
 export function getMe() {
   const raw = localStorage.getItem("me");
   return raw ? JSON.parse(raw) : null;
+}
+
+// Lo que te faltaba para App.jsx
+export function clearToken() {
+  setToken(null);
+  setMe(null);
 }
